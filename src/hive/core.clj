@@ -67,7 +67,7 @@
            (if (= 3 depth)
                paths
                (recur (inc depth) (mapcat explore-path paths))))]
-    (distinct (map peek (search 0 [[coord]])))))
+    (into #{} (map peek (search 0 [[coord]])))))
 
 (defn ladybug-moves [board coord]
   "Ladybugs move up, then one along the top, then one down"
@@ -75,7 +75,7 @@
        (board/occupied-neighbors board)
        (mapcat (partial board/occupied-neighbors (dissoc board coord)))
        (mapcat (partial board/unoccupied-neighbors board))
-       (distinct)))
+       (into #{})))
 
 (declare available-moves)
 

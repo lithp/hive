@@ -94,14 +94,12 @@
   (test-standard-motions ant-moves)
   (testing "can move to many locations"
     (let [board (make-board origin up)]
-      (is (= 5 (count (ant-moves board up))))))
-)
+      (is (= 5 (count (ant-moves board up)))))))
 
 (deftest spider-motion
   (testing "simple case"
     (let [board (make-board origin up)]
-      (is (= 1 (count (spider-moves board up))))))
-)
+      (is (= 1 (count (spider-moves board up)))))))
 
 (deftest ladybug-motion
   (testing "can't move when there isn't a second piece to crawl onto"
@@ -110,8 +108,7 @@
   (testing "must crawl at least one piece"
     (let [board (make-board origin up upup)]
       (is (= (disj (into #{} coord/directions) up)
-             (into #{} (ladybug-moves board upup))))))
-)
+             (into #{} (ladybug-moves board upup)))))))
 
 (deftest mosquito-motion
   (testing "simple case, can steal from ant"
@@ -119,8 +116,7 @@
       (is (= 5 (count (mosquito-moves board up))))))
   (testing "immobilized when next to mosquito"
     (let [board (make-board [origin :white :mosquito] [up :black :mosquito])]
-      (is (= 0 (count (mosquito-moves board up))))))
-)
+      (is (= 0 (count (mosquito-moves board up)))))))
 
 (deftest one-hive
   (testing "simple cases, only leaf nodes may move"
