@@ -85,11 +85,11 @@
 
 (defn mosquito-moves [board coord]
   "The mosquito may move like any of the pieces surrounding it"
-  (distinct (concat
-    (let [insects (distinct (map (comp :insect first) (keep board (coord/neighbors coord))))]
-      (for [insect insects]
-        (when-not (= :mosquito insect) ; it may not steal from a mosquito
-          (available-moves board insect coord)))))))
+  (apply set/union
+    (let [insects (distinct (map (comp :insect first board)
+                                 (board/occupied-neighbors board coord)))]
+      (for [insect insects :when (not= :mosquito insect)]
+        (into #{} (available-moves board insect coord))))))
 
 (defn available-moves [board insect coord]
   ((insect {:grasshopper grasshopper-moves

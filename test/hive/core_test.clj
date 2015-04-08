@@ -4,8 +4,12 @@
             [hive.board :as board]
             [hive.coord :as coord :refer [origin up up-right down-right down down-left up-left]]))
 
-(defn make-board [& coords]
-  (reduce #(board/add %1 %2 (board/piece :unknown :unknown)) {} coords))
+(defn make-board [& specs]
+  (letfn [(add-args [[coord color insect :as all]]
+                      (if (every? number? all)
+                        [all (board/piece :unknown :unknown)]
+                        [coord (board/piece (or color :unknown) (or insect :unknown))]))]
+    (reduce #(apply (partial board/add %1) (add-args %2)) board/EMPTY specs)))
 
 (deftest board-regression-tests
   (testing "board/pop dissoc's if there is nothing left"
@@ -101,6 +105,15 @@
              (into #{} (spider-moves board up))))))
 )
 
+(deftest ladybug-motion
+
+)
+
+(deftest mosquito-motion
+  (testing "simple case"
+    (let [board (make-board [origin :white :ant] [up :black :mosquito])]
+      (is (= 5 (count (mosquito-moves board up)))))))
+
 (deftest one-hive
   (testing "simple cases"
     (let [board (make-board origin up)]
@@ -108,6 +121,8 @@
     (let [board (make-board origin up (coord/add up up))]
       (is (= 2 (count (one-hive-movable-pieces board))))))
   (testing "rings"
+    (let [board (make-board origin up-left up up-right)]
+      (is (= 4 (count (one-hive-movable-pieces board)))))
     (let [board (make-board up up-right down-right down down-left up-left)]
       (is (= 6 (count (one-hive-movable-pieces board)))))
     (let [board (make-board origin up up-right down-right down down-left up-left)]
@@ -117,6 +132,9 @@
 
 (deftest spawns
   (testing "simple cases"
-    (let [board (board/add board/EMPTY origin (board/piece :white :spider))]
+    (let [board (make-board [origin :white])]
       (is (= 0 (count (spawn-locations board :black))))
-      (is (= 6 (count (spawn-locations board :white)))))))
+      (is (= 6 (count (spawn-locations board :white)))))
+    (let [board (make-board [origin :white] [up :black])]
+      (is (= 3 (count (spawn-locations board :black))
+               (count (spawn-locations board :white)))))))
