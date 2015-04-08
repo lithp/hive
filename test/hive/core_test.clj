@@ -2,14 +2,15 @@
   (:require [clojure.test :refer :all]
             [hive.core :refer :all]
             [hive.board :as board]
-            [hive.coord :as coord :refer [origin up up-right down-right down down-left up-left]]))
+            [hive.coord :as coord :refer [origin up up-right down-right down
+                                          down-left up-left upup downdown]]))
 
 (defn make-board [& specs]
   (letfn [(add-args [[coord color insect :as all]]
                       (if (every? number? all)
                         [all (board/piece :unknown :unknown)]
                         [coord (board/piece (or color :unknown) (or insect :unknown))]))]
-    (reduce #(apply (partial board/add %1) (add-args %2)) board/EMPTY specs)))
+    (reduce #(apply board/add %1 (add-args %2)) board/EMPTY specs)))
 
 (deftest board-regression-tests
   (testing "board/pop dissoc's if there is nothing left"
@@ -17,24 +18,22 @@
 
 (deftest freedom-of-movement
   (testing "Simple case, if there is nobody in the way movement is allowed"
-    (is (free-to-move? {} origin (coord/add origin up)))))
+    (is (free-to-move? {} origin up))))
   (testing "If there is one piece in the way, movement is still allowed"
-    (is (free-to-move? (make-board (coord/add origin up)) origin (coord/add origin up-right))))
+    (is (free-to-move? (make-board up) origin up-right)))
   (testing "If there are two pieces in the way, we are not free to move"
-    (let [board (make-board (coord/add origin up) (coord/add origin down-right))]
-      (is (not (free-to-move? board origin (coord/add origin up-right))))))
+    (let [board (make-board up down-right)]
+      (is (not (free-to-move? board origin up-right)))))
   (testing "If the destination is raised we are freed to move"
-    (let [board (make-board (coord/add origin up)
-                            (coord/add origin down-right)
-                            (coord/add origin up-right))]
-      (is (free-to-move? board origin (coord/add origin up-right)))))
+    (let [board (make-board up down-right up-right)]
+      (is (free-to-move? board origin up-right))))
 
 (deftest moving
   (testing "simple case"
     (let [board (make-board origin)]
       (= (make-board up) (board/move board origin up))))
   (testing "works when origin and dest are same coord"
-    (let [board (make-board origin origin (coord/add origin up))]
+    (let [board (make-board origin origin up)]
       (= board (board/move board origin origin)))))
 
 (deftest grasshopper-motion
@@ -101,33 +100,42 @@
 (deftest spider-motion
   (testing "simple case"
     (let [board (make-board origin up)]
-      (is (= #{down}
-             (into #{} (spider-moves board up))))))
+      (is (= 1 (count (spider-moves board up))))))
 )
 
 (deftest ladybug-motion
-
+  (testing "can't move when there isn't a second piece to crawl onto"
+    (let [board (make-board origin up)]
+      (is (empty? (ladybug-moves board up)))))
+  (testing "must crawl at least one piece"
+    (let [board (make-board origin up upup)]
+      (is (= (disj (into #{} coord/directions) up)
+             (into #{} (ladybug-moves board upup))))))
 )
 
 (deftest mosquito-motion
-  (testing "simple case"
+  (testing "simple case, can steal from ant"
     (let [board (make-board [origin :white :ant] [up :black :mosquito])]
-      (is (= 5 (count (mosquito-moves board up)))))))
+      (is (= 5 (count (mosquito-moves board up))))))
+  (testing "immobilized when next to mosquito"
+    (let [board (make-board [origin :white :mosquito] [up :black :mosquito])]
+      (is (= 0 (count (mosquito-moves board up))))))
+)
 
 (deftest one-hive
-  (testing "simple cases"
+  (testing "simple cases, only leaf nodes may move"
     (let [board (make-board origin up)]
       (is (= 2 (count (one-hive-movable-pieces board)))))
-    (let [board (make-board origin up (coord/add up up))]
+    (let [board (make-board origin up upup)]
       (is (= 2 (count (one-hive-movable-pieces board))))))
-  (testing "rings"
+  (testing "rings, all pieces not next to a previous leaf may move"
     (let [board (make-board origin up-left up up-right)]
       (is (= 4 (count (one-hive-movable-pieces board)))))
     (let [board (make-board up up-right down-right down down-left up-left)]
       (is (= 6 (count (one-hive-movable-pieces board)))))
     (let [board (make-board origin up up-right down-right down down-left up-left)]
       (is (= 7 (count (one-hive-movable-pieces board)))))
-    (let [board (make-board up (coord/add up up) up-right down-right down down-left up-left)]
+    (let [board (make-board up upup up-right down-right down down-left up-left)]
       (is (= 6 (count (one-hive-movable-pieces board)))))))
 
 (deftest spawns

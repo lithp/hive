@@ -13,6 +13,7 @@
 (def add (comp vec (partial map +)))
 (def sub (comp vec (partial map -)))
 
+; these are mostly for testing, but often convenient to have
 (def origin [0 0 0])
 (def up [0 1 -1])
 (def up-right [1 0 -1])
@@ -20,6 +21,9 @@
 (def down (sub origin up))
 (def down-left (sub origin up-right))
 (def up-left (sub origin down-right))
+
+(def upup (add up up))
+(def downdown (add down down))
 
 (def directions (combo/permutations [-1 0 1]))
 

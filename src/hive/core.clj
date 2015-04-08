@@ -69,17 +69,13 @@
                (recur (inc depth) (mapcat explore-path paths))))]
     (distinct (map peek (search 0 [[coord]])))))
 
-; TODO: This contains a bug where the ladybug tries to move along the top of /itself/
 (defn ladybug-moves [board coord]
   "Ladybugs move up, then one along the top, then one down"
-  (let [is-stack? (partial contains? board)]
-    (->> (coord/neighbors coord)
-         (filter is-stack?)
-         (mapcat coord/neighbors)
-         (filter is-stack?)
-         (mapcat coord/neighbors)
-         (remove is-stack?)
-         (distinct))))
+  (->> coord
+       (board/occupied-neighbors board)
+       (mapcat (partial board/occupied-neighbors (dissoc board coord)))
+       (mapcat (partial board/unoccupied-neighbors board))
+       (distinct)))
 
 (declare available-moves)
 
