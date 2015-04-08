@@ -1,9 +1,8 @@
 (ns hive.core
   (:gen-class)
   (:require [clojure.set :as set]
+            [hive.board :as board]
             [hive.coord :as coord]))
-
-(defn piece [color insect] {:color color :insect insect})
 
 (defn free-to-move? [board from to]
   "When going from a->b and flanked by c, d
@@ -16,38 +15,6 @@
        a-b [(- (stack-size from) 1) (stack-size to)]
        c-d (map stack-size (coord/adjacent-coords from direction))]
   (>= (apply max a-b) (apply min c-d))))
-
-(def empty-board {})
-
-(defn board-add [board to piece]
-  (if piece
-    (assoc board to (conj (board to) piece))
-     board))
-
-(defn board-pop [board from]
-  (let [from-stack (board from)]
-    (if (seq (rest from-stack))
-      (assoc board from (rest from-stack))
-      (dissoc board from))))
-
-(defn board-peek [board from]
-  (peek (board from)))
-
-(defn move [board from to]
-  (let [piece (board-peek board from)]
-    (assert piece [board from])
-    (board-add (board-pop board from) to piece)))
-
-(defn occupied-neighbors [board coord]
-  (filter board (coord/neighbors coord)))
-
-(defn unoccupied-neighbors [board coord]
-  (remove board (coord/neighbors coord)))
-
-(defn connected? [board coord]
-  (if (board coord)
-    coord
-    (first (occupied-neighbors board coord))))
 
 ; a board is a map {coord -> [piece]}
 
@@ -65,7 +32,7 @@
 (defn beetle-moves [board coord]
   "The beetle may move one space in any direction, including occupied ones."
     (filter (every-pred (partial free-to-move? board coord)
-                        (partial connected? (board-pop board coord)))
+                        (partial board/connected? (board/pop board coord)))
             (coord/neighbors coord)))
 
 (defn queen-moves [board coord]
@@ -83,7 +50,7 @@
     (if (empty? queue)
       (disj seen coord) ; you can't move to where you already were
       (let [node (peek queue)
-            children (remove seen (queen-moves (move board coord node) node))]
+            children (remove seen (queen-moves (board/move board coord node) node))]
         (recur (into seen children) (into (pop queue) children))))))
 
 (defn spider-moves [board coord]
@@ -93,7 +60,7 @@
    TODO: May a spider end where it started? The way this is implemented says yes.
   "
   (letfn [(explore-path [path]
-            (for [move (queen-moves (move board coord (peek path)) (peek path))
+            (for [move (queen-moves (board/move board coord (peek path)) (peek path))
                   :when (not= move (peek (pop path)))]
               (conj path move)))
           (search [depth paths]
@@ -148,14 +115,14 @@
      Pieces which are part of a cycle may move
        Except for those which are neighbors of a non-cyclic part of the board
   "
-  (letfn [(num-neighbors [board coord] (count (occupied-neighbors board coord)))
+  (letfn [(num-neighbors [board coord] (count (board/occupied-neighbors board coord)))
           (leaf-nodes [board] (filter #(= 1 (num-neighbors board %))
                                       (keys board)))
           (without-leafs [board] (apply dissoc board (leaf-nodes board)))]
   (let [orig-leafs (leaf-nodes board)
         minimal-board (iterate-until-fixed without-leafs board)
         ; remove all coords which have a neighbor not in minimal board
-        excluding-leaf-neighbors (filter #(every? minimal-board (occupied-neighbors board %))
+        excluding-leaf-neighbors (filter #(every? minimal-board (board/occupied-neighbors board %))
                                    (keys minimal-board))]
     (lazy-cat orig-leafs excluding-leaf-neighbors))))
 
@@ -165,7 +132,7 @@
   "Every position which is connected to the hive yet only next to pieces with :color color"
   (letfn [(stack-color [pieces] (:color (first pieces)))
           (emit-neighbors [[coord color]]
-            (for [neighbor (unoccupied-neighbors board coord)]
+            (for [neighbor (board/unoccupied-neighbors board coord)]
               {color #{neighbor}}))]
   (let [colored-coords (map (fn [[coord pieces]] [coord (stack-color pieces)])
                             board)
