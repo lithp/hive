@@ -11,7 +11,7 @@
    is as least as tall as the shortest of c, d.
   "
  (let [direction (coord/sub to from)
-       stack-size (fn [coord] (count (board coord)))
+       stack-size (partial board/stack-size board)
        a-b [(- (stack-size from) 1) (stack-size to)]
        c-d (map stack-size (coord/adjacent-coords from direction))]
   (>= (apply max a-b) (apply min c-d))))
@@ -120,7 +120,7 @@
         ; remove all coords which have a neighbor not in minimal board
         excluding-leaf-neighbors (filter #(every? minimal-board (board/occupied-neighbors board %))
                                    (keys minimal-board))]
-    (lazy-cat orig-leafs excluding-leaf-neighbors))))
+    (into #{} (lazy-cat orig-leafs excluding-leaf-neighbors)))))
 
 ; the first move is a special case, player 1 spawns on the origin,
 ; player 2 spawns anywhere
@@ -136,6 +136,19 @@
         by-color (apply merge-with set/union neighbors)]
     (apply set/difference (by-color color) (vals (dissoc by-color color)))
 )))
+
+(defn pillbug-throws [board coord]
+  "What are all the special moves the pillbug at coord can make?
+
+   A pillbug may only move pieces which are not stacked and which won't break
+   the hive by being moved. It may move pieces into any location adjacent to
+   themselves.
+  "
+  (for [neighbor (board/occupied-neighbors board coord)
+        empty-spot (board/unoccupied-neighbors board coord)
+        :when (and (contains? (one-hive-movable-pieces board) neighbor)
+                   (= 1 (board/stack-size board neighbor)))]
+    [neighbor empty-spot]))
 
 (defn -main
   "Plays Hive!"

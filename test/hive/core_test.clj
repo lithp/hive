@@ -142,3 +142,11 @@
     (let [board (make-board [origin :white] [up :black])]
       (is (= 3 (count (spawn-locations board :black))
                (count (spawn-locations board :white)))))))
+
+(deftest pillbug-special
+  (testing "can throw"
+    (let [board (make-board origin up)]
+      (is (= 5 (count (pillbug-throws board origin)))))
+  (testing "does not throw stacks"
+    (let [board (make-board origin up up)]
+      (is (empty? (pillbug-throws board origin)))))))

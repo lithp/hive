@@ -35,3 +35,5 @@
   (if (board coord)
     coord
     (first (occupied-neighbors board coord))))
+
+(defn stack-size [board coord] (count (board coord)))
