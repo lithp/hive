@@ -4,6 +4,17 @@
             [hive.board :as board]
             [hive.coord :as coord]))
 
+(def starting-pieces
+  {:ant 3 :grasshopper 3 :beetle 2 :spider 2 :ladybug 1 :mosquito 1 :queen 1 :pullbug 1})
+
+(defn available-insects [board color]
+  "All unspawned pieces color has left to place"
+  (->> (vals board)
+       (flatten)
+       (filter #(= color (:color %)))
+       (map (fn [piece] {(:insect piece) 1}))
+       (apply merge-with - starting-pieces)))
+
 (defn free-to-move? [board from to]
   "When going from a->b and flanked by c, d
    
@@ -110,17 +121,19 @@
      Pieces which have only one neighbor may move
      Pieces which are part of a cycle may move
        Except for those which are neighbors of a non-cyclic part of the board
-  "
+
+   Pieces may also move if they are part of a stack which is higher than 1."
   (letfn [(num-neighbors [board coord] (count (board/occupied-neighbors board coord)))
           (leaf-nodes [board] (filter #(= 1 (num-neighbors board %))
                                       (keys board)))
           (without-leafs [board] (apply dissoc board (leaf-nodes board)))]
-  (let [orig-leafs (leaf-nodes board)
+  (let [stacks (map key (filter (comp (partial > 1) count val) board))
+        orig-leafs (leaf-nodes board)
         minimal-board (iterate-until-fixed without-leafs board)
         ; remove all coords which have a neighbor not in minimal board
         excluding-leaf-neighbors (filter #(every? minimal-board (board/occupied-neighbors board %))
                                    (keys minimal-board))]
-    (into #{} (lazy-cat orig-leafs excluding-leaf-neighbors)))))
+    (into #{} (lazy-cat stacks orig-leafs excluding-leaf-neighbors)))))
 
 ; the first move is a special case, player 1 spawns on the origin,
 ; player 2 spawns anywhere
@@ -149,6 +162,37 @@
         :when (and (contains? (one-hive-movable-pieces board) neighbor)
                    (= 1 (board/stack-size board neighbor)))]
     [neighbor empty-spot]))
+
+(defn all-moves [board color]
+  "A sequence of all moves color may make this turn of the form [source dest].
+
+   For each movable piece all the places it may move to."
+  (let [movable-coords (one-hive-movable-pieces board)
+        my-coords (filter (comp (partial = color) :color first board) movable-coords)]
+    (flatten (for [coord my-coords]
+               (let [insect (:insect (first (board coord)))]
+                 (available-moves board insect coord))))))
+
+(defn next-color [color]
+  (color {:black :white
+          :white :black}))
+
+(defn all-next-boards [board color last-moved]
+  "A sequence of all boards which could result from color moving this turn
+   returns vectors of [board color last-moved]
+
+   last-moved is the piece last moved/thrown by a player, it may not be moved
+   or thrown this turn."
+  (lazy-cat
+
+    (for [coord (spawn-locations board color)
+          insect (keys (available-insects board color))]
+      (let [piece (board/piece color insect)]
+        [(board/add board coord piece) (next-color color) coord]))
+
+    (let [moves (all-moves board color)]
+      (for [[from to] moves :when (not= from last-moved)]
+        [(board/move board from to) (next-color color) to]))))
 
 (defn game-won? [board]
   "Returns nil if the game is not finished.

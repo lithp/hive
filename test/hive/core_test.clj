@@ -16,6 +16,24 @@
   (testing "board/pop dissoc's if there is nothing left"
     (is (= {} (board/pop (make-board origin) origin)))))
 
+(deftest piece-math
+  (testing "With an empty board, you have all pieces available to you"
+    (is (= starting-pieces (available-insects board/EMPTY :white))))
+  (testing "With a fuller board subtracts correctly"
+    (is (= (assoc starting-pieces :ant 0)
+           (available-insects (make-board [origin :white :ant]
+                                         [up :white :ant]
+                                         [down :white :ant])
+                             :white))))
+  (testing "Stacks of pieces are correctly accounted for"
+    (is (= (assoc starting-pieces :beetle 0
+                                  :mosquito 0)
+           (available-insects (make-board [origin :white :beetle]
+                                         [origin :white :beetle]
+                                         [up :white :mosquito]
+                                         [up :black :beetle])
+                             :white)))))
+
 (deftest freedom-of-movement
   (testing "Simple case, if there is nobody in the way movement is allowed"
     (is (free-to-move? {} origin up))))
