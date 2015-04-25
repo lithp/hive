@@ -150,6 +150,24 @@
                    (= 1 (board/stack-size board neighbor)))]
     [neighbor empty-spot]))
 
+(defn game-won? [board]
+  "Returns nil if the game is not finished.
+   Returns :draw if both queens are surrounded
+   Returns a color if it has won by surrounding the other queen."
+  (let [queens (keep (fn [[coord stack]] (when (= :queen (:insect (last stack)))
+                                             coord))
+                       board)
+        surrounded? (fn [coord] (every? (partial contains? board) (coord/neighbors coord)))
+        loser-coords (filter surrounded? queens)
+        loser-colors (set (map (comp :color last board) loser-coords))
+        all-colors (set (map (comp :color last board) queens))
+
+        winners (set/difference all-colors loser-colors)]
+    (assert (>= 2 (count queens)))
+    (cond (= 0 (count loser-colors)) nil
+          (= 2 (count loser-colors)) :draw
+          :default (first winners))))
+
 (defn -main
   "Plays Hive!"
   [& args]

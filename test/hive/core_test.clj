@@ -146,7 +146,23 @@
 (deftest pillbug-special
   (testing "can throw"
     (let [board (make-board origin up)]
-      (is (= 5 (count (pillbug-throws board origin)))))
+      (is (= 5 (count (pillbug-throws board origin))))))
   (testing "does not throw stacks"
-    (let [board (make-board origin up up)]
-      (is (empty? (pillbug-throws board origin)))))))
+    (is (empty? (pillbug-throws (make-board origin up up) origin))))
+  (testing "does not throw pieces which would break the hive"
+    (is (empty? (pillbug-throws (make-board origin up upup) origin)))))
+
+(deftest win-condition
+  (testing "game is not won when a queen is not surrounded"
+    (let [board (make-board [origin :white :queen] up up-right down-right down down-left)]
+      (is (not (game-won? board)))))
+  (testing "game is won when a queen is surrounded"
+    (let [board (make-board [origin :white :queen]
+                            [up :black :queen] up-right down-right down down-left up-left)]
+      (is (= :black (game-won? board)))))
+  (testing "game is a draw when both queens are surrounded"
+    (let [board (make-board [origin :white :queen]
+                            [up :black :queen]
+                            upup (coord/add up up-left) (coord/add up up-right)
+                            up-left up-right down-left down-right down)]
+      (is (= :draw (game-won? board))))))
