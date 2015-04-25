@@ -127,7 +127,7 @@
           (leaf-nodes [board] (filter #(= 1 (num-neighbors board %))
                                       (keys board)))
           (without-leafs [board] (apply dissoc board (leaf-nodes board)))]
-  (let [stacks (map key (filter (comp (partial > 1) count val) board))
+  (let [stacks (map key (filter (comp (partial < 1) count val) board))
         orig-leafs (leaf-nodes board)
         minimal-board (iterate-until-fixed without-leafs board)
         ; remove all coords which have a neighbor not in minimal board

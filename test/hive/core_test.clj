@@ -150,7 +150,10 @@
     (let [board (make-board origin up up-right down-right down down-left up-left)]
       (is (= 7 (count (one-hive-movable-pieces board)))))
     (let [board (make-board up upup up-right down-right down down-left up-left)]
-      (is (= 6 (count (one-hive-movable-pieces board)))))))
+      (is (= 6 (count (one-hive-movable-pieces board))))))
+  (testing "pieces on top of a stack may move")
+    (let [board (make-board origin origin up down)]
+      (is (= 3 (count (one-hive-movable-pieces board))))))
 
 (deftest spawns
   (testing "simple cases"
