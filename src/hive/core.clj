@@ -78,7 +78,7 @@
            (if (= 3 depth)
                paths
                (recur (inc depth) (mapcat explore-path paths))))]
-    (into #{} (map peek (search 0 [[coord]])))))
+    (set (map peek (search 0 [[coord]])))))
 
 (defn ladybug-moves [board coord]
   "Ladybugs move up, then one along the top, then one down"
@@ -86,7 +86,7 @@
        (board/occupied-neighbors board)
        (mapcat (partial board/occupied-neighbors (dissoc board coord)))
        (mapcat (partial board/unoccupied-neighbors board))
-       (into #{})))
+       (set)))
 
 (declare available-moves)
 
@@ -96,18 +96,19 @@
     (let [insects (distinct (map (comp :insect first board)
                                  (board/occupied-neighbors board coord)))]
       (for [insect insects :when (not= :mosquito insect)]
-        (into #{} (available-moves board insect coord))))))
+        (available-moves board insect coord)))))
 
 (defn available-moves [board insect coord]
-  ((insect {:grasshopper grasshopper-moves
-            :beetle beetle-moves
-            :queen queen-moves
-            :ant ant-moves
-            :spider spider-moves
-            :ladybug ladybug-moves
-            :pillbug pillbug-moves
-            :mosquito mosquito-moves})
-    board coord))
+  (set
+    ((insect {:grasshopper grasshopper-moves
+              :beetle beetle-moves
+              :queen queen-moves
+              :ant ant-moves
+              :spider spider-moves
+              :ladybug ladybug-moves
+              :pillbug pillbug-moves
+              :mosquito mosquito-moves})
+      board coord)))
 
 (defn iterate-until-fixed [f initial]
   (loop [accum initial]
@@ -133,7 +134,7 @@
         ; remove all coords which have a neighbor not in minimal board
         excluding-leaf-neighbors (filter #(every? minimal-board (board/occupied-neighbors board %))
                                    (keys minimal-board))]
-    (into #{} (lazy-cat stacks orig-leafs excluding-leaf-neighbors)))))
+    (set (concat stacks orig-leafs excluding-leaf-neighbors)))))
 
 ; the first move is a special case, player 1 spawns on the origin,
 ; player 2 spawns anywhere
@@ -154,9 +155,8 @@
   "What are all the special moves the pillbug at coord can make?
 
    A pillbug may only move pieces which are not stacked and which won't break
-   the hive by being moved. It may move pieces into any location adjacent to
-   themselves.
-  "
+   the hive by being moved. It may move pieces into any empty location adjacent
+   to themselves."
   (for [neighbor (board/occupied-neighbors board coord)
         empty-spot (board/unoccupied-neighbors board coord)
         :when (and (contains? (one-hive-movable-pieces board) neighbor)
@@ -169,9 +169,11 @@
    For each movable piece all the places it may move to."
   (let [movable-coords (one-hive-movable-pieces board)
         my-coords (filter (comp (partial = color) :color first board) movable-coords)]
-    (flatten (for [coord my-coords]
-               (let [insect (:insect (first (board coord)))]
-                 (available-moves board insect coord))))))
+    (apply concat
+    (for [coord my-coords
+          :let [insect (:insect (first (board coord)))]]
+      (for [dest (available-moves board insect coord)]
+        [coord dest])))))
 
 (defn next-color [color]
   (color {:black :white
@@ -186,9 +188,9 @@
   (lazy-cat
 
     (for [coord (spawn-locations board color)
-          insect (keys (available-insects board color))]
-      (let [piece (board/piece color insect)]
-        [(board/add board coord piece) (next-color color) coord]))
+          insect (keys (available-insects board color))
+          :let [piece (board/piece color insect)]]
+      [(board/add board coord piece) (next-color color) coord])
 
     (let [moves (all-moves board color)]
       (for [[from to] moves :when (not= from last-moved)]

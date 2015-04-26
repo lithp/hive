@@ -173,6 +173,12 @@
   (testing "does not throw pieces which would break the hive"
     (is (empty? (pillbug-throws (make-board origin up upup) origin)))))
 
+(deftest next-board-generation
+  (testing "all-moves simple case"
+    (let [board (make-board [origin :white :queen]
+                            [origin :black :beetle])]
+      (is (= 6 (count (all-moves board :black)))))))
+
 (deftest win-condition
   (testing "game is not won when a queen is not surrounded"
     (let [board (make-board [origin :white :queen] up up-right down-right down down-left)]
