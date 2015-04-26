@@ -185,7 +185,7 @@
 
    last-moved is the piece last moved/thrown by a player, it may not be moved
    or thrown this turn."
-  (lazy-cat
+  (concat
 
     (for [coord (spawn-locations board color)
           insect (keys (available-insects board color))

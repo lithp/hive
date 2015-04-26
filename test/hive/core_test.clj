@@ -173,11 +173,28 @@
   (testing "does not throw pieces which would break the hive"
     (is (empty? (pillbug-throws (make-board origin up upup) origin)))))
 
-(deftest next-board-generation
-  (testing "all-moves simple case"
+(deftest all-moves-generation
+  (testing "single piece"
+    (let [board (make-board [origin :white :queen])]
+      (is (= 0 (count (all-moves board :black))))
+      (is (= 0 (count (all-moves board :white)))))
     (let [board (make-board [origin :white :queen]
                             [origin :black :beetle])]
-      (is (= 6 (count (all-moves board :black)))))))
+      (is (= 6 (count (all-moves board :black))))))
+  (testing "takes into account hive-movability"
+    (let [board (make-board [origin :white :queen]
+                            [up :white :beetle]
+                            [down :black :queen]
+                            [downdown :white :beetle])]
+      (is (= 6 (count (all-moves board :white)))))))
+
+(deftest next-board-generation
+  (with-redefs [available-insects (constantly {:beetle 1 :pillbug 1})]
+    (let [board (make-board [origin :white :queen]
+                            [up :black :queen])]
+      (comment "This states the queen may be moved on the second turn, even though"
+               "the resulting board is equivalent to the starting one")
+      (is (= (+ 2 (* 2 3)) (count (all-next-boards board :white nil)))))))
 
 (deftest win-condition
   (testing "game is not won when a queen is not surrounded"
