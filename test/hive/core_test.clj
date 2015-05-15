@@ -1,6 +1,6 @@
 (ns hive.core-test
   (:require [clojure.test :refer :all]
-            [hive.core :refer :all]
+            [hive.rules :refer :all]
             [hive.board :as board]
             [hive.coord :as coord :refer [origin up up-right down-right down
                                           down-left up-left upup downdown]]))
