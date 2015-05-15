@@ -1,5 +1,4 @@
 (ns hive.board
-  (:refer-clojure :rename {peek cpeek, pop cpop})
   (:require [hive.coord :as coord]))
 
 (defn piece [color insect] {:color color :insect insect})

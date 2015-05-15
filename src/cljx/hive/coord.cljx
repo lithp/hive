@@ -1,5 +1,4 @@
-(ns hive.coord
-  (:require [clojure.math.combinatorics :as combo]))
+(ns hive.coord)
 
 ; the coordinates are "cube coordinates" from 
 ; http://www.redblobgames.com/grids/hexagons/
@@ -25,7 +24,12 @@
 (def upup (add up up))
 (def downdown (add down down))
 
-(def directions (combo/permutations [-1 0 1]))
+(def directions [[-1 0 1]
+                 [-1 1 0]
+                 [0 -1 1]
+                 [0 1 -1]
+                 [1 0 -1]
+                 [1 -1 0]])
 
 (defn neighbors [coord] (map (partial add coord) directions))
 
