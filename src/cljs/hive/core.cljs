@@ -26,6 +26,15 @@
     (canvas/close-path ctx)
     (canvas/stroke ctx)))
 
+(defn draw-piece [ctx width x y]
+  ; draw a hex, then draw some text on top of it
+  (canvas/font-style ctx "30pt Arial")
+  (canvas/text-align ctx "center")
+  (canvas/text-baseline ctx "middle")
+  (canvas/text ctx {:text "Q" :x x :y y})
+  (draw-hex ctx width x y)
+)
+
 (defn draw-rect-at [ctx x y]
   (canvas/fill-rect ctx {:x x :y x :w 10 :h 10}))
 
@@ -49,7 +58,8 @@
     (doseq [x (range 10), y (range 10)
             :let [coord (nth (iterate (partial coord/add coord/down-right) coord/origin) x)
                   coord (nth (iterate (partial coord/add coord/down) coord) y)]]
-      (apply draw-hex ctx 50 (coord-fn coord)))))
+      (apply draw-piece ctx 50 (coord-fn coord)))))
+      ;(apply draw-hex ctx 50 (coord-fn coord)))))
 
 (defn draw [canvas-elem]
   (draw-board board canvas-elem))
