@@ -42,7 +42,7 @@
 (defn beetle-moves [board coord]
   "The beetle may move one space in any direction, including occupied ones."
     (filter (every-pred (partial free-to-move? board coord)
-                        (partial board/connected? (board/pop board coord)))
+                        (partial board/connected? (board/pop-stack board coord)))
             (coord/neighbors coord)))
 
 (defn queen-moves [board coord]

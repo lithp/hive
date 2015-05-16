@@ -14,7 +14,7 @@
 
 (deftest board-regression-tests
   (testing "board/pop dissoc's if there is nothing left"
-    (is (= {} (board/pop (make-board origin) origin)))))
+    (is (= {} (board/pop-stack (make-board origin) origin)))))
 
 (deftest piece-math
   (testing "With an empty board, you have all pieces available to you"

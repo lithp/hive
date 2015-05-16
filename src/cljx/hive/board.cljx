@@ -10,19 +10,19 @@
     (assoc board to (conj (board to) piece))
      board))
 
-(defn pop [board from]
+(defn pop-stack [board from]
   (let [from-stack (board from)]
     (if (seq (rest from-stack))
       (assoc board from (rest from-stack))
       (dissoc board from))))
 
-(defn peek [board from]
-  (cpeek (board from)))
+(defn peek-stack [board from]
+  (peek (board from)))
 
 (defn move [board from to]
-  (let [piece (peek board from)]
+  (let [piece (peek-stack board from)]
     (assert piece [board from])
-    (add (pop board from) to piece)))
+    (add (pop-stack board from) to piece)))
 
 (defn occupied-neighbors [board coord]
   (filter board (coord/neighbors coord)))
